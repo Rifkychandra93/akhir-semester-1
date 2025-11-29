@@ -1,0 +1,78 @@
+{
+    "products": [
+      {
+        "id": 1,
+        "seller": "MangTeten",
+        "pp" :"/Logo PPLG 2022.png",
+        "name": "Nasi Goreng Spesial",
+        "description": "Nasi goreng dengan telur, sosis, dan sayur segar buatan Bu Ani.",
+        "price": 15000,
+        "category": "Makanan Berat",
+        "image": "/download.png",
+        "stock": 10,
+        "createdAt": "2025-11-07T09:00:00Z",
+        "updatedAt": "2025-11-07T09:00:00Z"
+      },
+      {
+        "id": 2,
+        "seller": "BuRini",
+        "name": "Bakso Kuah Pedas",
+        "description": "Bakso daging sapi asli dengan kuah pedas menggugah selera.",
+        "price": 12000,
+        "category": "Makanan Berat",
+        "image": "/images/bakso.jpg",
+        "stock": 20,
+        "createdAt": "2025-11-07T09:05:00Z",
+        "updatedAt": "2025-11-07T09:05:00Z"
+      },
+      {
+        "id": 3,
+        "seller": "BuRini",
+        "name": "Es Teh Manis",
+        "description": "Es teh manis segar untuk menemani makan siang di kantin.",
+        "price": 5000,
+        "category": "Minuman",
+        "image": "/images/estehmanis.jpg",
+        "stock": 30,
+        "createdAt": "2025-11-07T09:10:00Z",
+        "updatedAt": "2025-11-07T09:10:00Z"
+      },
+      {
+        "id": 4,
+        "seller": "PakDedi",
+        "name": "Mie Ayam Original",
+        "description": "Mie ayam dengan potongan ayam lembut dan sawi segar.",
+        "price": 13000,
+        "category": "Makanan Berat",
+        "image": "/images/mieayam.jpg",
+        "stock": 15,
+        "createdAt": "2025-11-07T09:20:00Z",
+        "updatedAt": "2025-11-07T09:20:00Z"
+      },
+      {
+        "id": 5,
+        "seller": "BuAni",
+        "name": "Risoles Ayam",
+        "description": "Cemilan gurih isi ayam dan sayuran favorit anak sekolah.",
+        "price": 4000,
+        "category": "Snack",
+        "image": "/images/risoles.jpg",
+        "stock": 25,
+        "createdAt": "2025-11-07T09:30:00Z",
+        "updatedAt": "2025-11-07T09:30:00Z"
+      },
+      {
+        "id": 6,
+        "seller": "BuRini",
+        "name": "Jus Alpukat",
+        "description": "Jus alpukat segar tanpa bahan pengawet, manis alami.",
+        "price": 8000,
+        "category": "Minuman",
+        "image": "/images/jusalpukat.jpg",
+        "stock": 12,
+        "createdAt": "2025-11-07T09:40:00Z",
+        "updatedAt": "2025-11-07T09:40:00Z"
+      }
+    ]
+  }
+  
