@@ -20,6 +20,64 @@ export default function History() {
     loadHistory();
   }, []);
 
+  // ========================================
+  // LISTENER untuk update dari Admin
+  // ========================================
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      console.log("Storage event detected!", e);
+      
+      const updateStr = localStorage.getItem("update_history");
+      if (!updateStr) return;
+
+      try {
+        const update = JSON.parse(updateStr);
+        console.log("Update from admin:", update);
+
+        setRiwayat(prev => {
+          const updated = prev.map(r => {
+            // Match by ID atau booking code
+            if (String(r.id) === String(update.id) || r.booking === update.booking) {
+              console.log("Matched order! Updating status to:", update.status);
+              return { 
+                ...r, 
+                status: update.status, 
+                remaining: 0 
+              };
+            }
+            return r;
+          });
+          
+          // Simpan kembali ke localStorage
+          localStorage.setItem("riwayat", JSON.stringify(updated));
+          return updated;
+        });
+
+      } catch (err) {
+        console.error("Error parsing update_history:", err);
+      }
+    };
+
+    // Listen untuk storage event (dari tab lain)
+    window.addEventListener("storage", handleStorageChange);
+    
+    // Listen untuk manual dispatch (dari tab yang sama)
+    window.addEventListener("storage", handleStorageChange);
+
+    // Polling setiap 2 detik sebagai backup
+    const interval = setInterval(() => {
+      const updateStr = localStorage.getItem("update_history");
+      if (updateStr) {
+        handleStorageChange();
+      }
+    }, 2000);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
   async function loadHistory() {
     try {
       const dbReq = await fetch("/api/history");

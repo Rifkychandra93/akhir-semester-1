@@ -134,7 +134,7 @@ export default function Checkout() {
                   <ShoppingBag size={28} />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-white">Checkout</h1>
+                  <h1 className="text-3xl font-bold text-white">Pemesanan</h1>
                   <p className="text-white/90 text-sm">Selesaikan pesanan Anda</p>
                 </div>
               </div>

@@ -243,10 +243,6 @@ export default function HomePage() {
                   <h3 className="text-lg font-bold text-gray-800 mb-1 line-clamp-1">
                     {product.name}
                   </h3>
-                  <p className="text-sm text-gray-500 mb-3 flex items-center gap-1">
-                    <span>📍</span>
-                    {product.seller}
-                  </p>
 
                   <div className="flex items-center justify-between mb-4">
                     <p className="text-xl font-bold text-orange-600">
@@ -287,7 +283,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="text-center text-gray-600 text-sm">
             <p className="font-semibold mb-1">Kantin Seistar</p>
-            <p>Melayani dengan sepenuh hati 💖</p>
+            <p>Kantin digital buatan anak RPL</p>
           </div>
         </div>
       </footer>
