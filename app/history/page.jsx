@@ -1,12 +1,13 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Clock, ArrowLeft, Receipt, Calendar, CreditCard, CheckCircle, XCircle, AlertCircle, Package } from "lucide-react";
+import { Clock, ArrowLeft, Receipt, Calendar, CreditCard, CheckCircle, XCircle, AlertCircle, Package, RefreshCw } from "lucide-react";
 
 export default function History() {
   const router = useRouter();
   const [riwayat, setRiwayat] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [lastSync, setLastSync] = useState(null);
 
   const formatTime = (ms) => {
     if (ms <= 0) return "00:00";
@@ -16,103 +17,90 @@ export default function History() {
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
-  useEffect(() => {
-    loadHistory();
-  }, []);
-
   // ========================================
-  // LISTENER untuk update dari Admin
+  // LOAD HISTORY DARI DATABASE
   // ========================================
-  useEffect(() => {
-    const handleStorageChange = (e) => {
-      console.log("Storage event detected!", e);
-      
-      const updateStr = localStorage.getItem("update_history");
-      if (!updateStr) return;
-
-      try {
-        const update = JSON.parse(updateStr);
-        console.log("Update from admin:", update);
-
-        setRiwayat(prev => {
-          const updated = prev.map(r => {
-            // Match by ID atau booking code
-            if (String(r.id) === String(update.id) || r.booking === update.booking) {
-              console.log("Matched order! Updating status to:", update.status);
-              return { 
-                ...r, 
-                status: update.status, 
-                remaining: 0 
-              };
-            }
-            return r;
-          });
-          
-          // Simpan kembali ke localStorage
-          localStorage.setItem("riwayat", JSON.stringify(updated));
-          return updated;
-        });
-
-      } catch (err) {
-        console.error("Error parsing update_history:", err);
-      }
-    };
-
-    // Listen untuk storage event (dari tab lain)
-    window.addEventListener("storage", handleStorageChange);
-    
-    // Listen untuk manual dispatch (dari tab yang sama)
-    window.addEventListener("storage", handleStorageChange);
-
-    // Polling setiap 2 detik sebagai backup
-    const interval = setInterval(() => {
-      const updateStr = localStorage.getItem("update_history");
-      if (updateStr) {
-        handleStorageChange();
-      }
-    }, 2000);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      clearInterval(interval);
-    };
-  }, []);
-
-  async function loadHistory() {
+  const loadHistory = useCallback(async () => {
     try {
+      console.log("📥 Fetching history from database...");
+      
       const dbReq = await fetch("/api/history");
       const dbRes = await dbReq.json();
-      const ls = JSON.parse(localStorage.getItem("riwayat") || "[]");
       
-      let merged = [];
-      if (dbRes.success) {
-        merged = [
-          ...dbRes.data.map(o => ({
-            id: o.id,
-            nama: o.nama_pemesan,
-            booking: o.booking_code,
-            metode: o.metode,
-            total: o.total,
-            tanggal: o.tanggal,
-            expiredAt: o.expired_at,
-            status: o.status,
-            remaining: o.expired_at - Date.now(),
-          })),
-          ...ls,
-        ];
-      } else {
-        merged = ls;
+      console.log("Database response:", dbRes);
+      
+      if (dbRes.success && dbRes.data) {
+        const mappedData = dbRes.data.map(o => ({
+          id: o.id,
+          nama: o.nama_pemesan,
+          booking: o.booking_code,
+          metode: o.metode,
+          total: o.total,
+          tanggal: o.tanggal,
+          expiredAt: o.expired_at,
+          status: o.status, // Status dari database (real-time)
+          remaining: o.expired_at - Date.now(),
+        }));
+        
+        setRiwayat(mappedData);
+        setLastSync(new Date().toLocaleTimeString());
+        console.log("✅ History loaded:", mappedData.length, "orders");
+        
+        // Log status setiap order
+        mappedData.forEach(order => {
+          console.log(`Order ${order.booking}: ${order.status}`);
+        });
       }
       
-      setRiwayat(merged);
     } catch (error) {
-      console.error("Error loading history:", error);
+      console.error("❌ Error loading history:", error);
+      // Fallback ke localStorage jika API gagal
       const ls = JSON.parse(localStorage.getItem("riwayat") || "[]");
       setRiwayat(ls);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  // ========================================
+  // INITIAL LOAD
+  // ========================================
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
+
+  // ========================================
+  // POLLING: Cek database setiap 5 detik
+  // ========================================
+  useEffect(() => {
+    console.log("🔄 Starting polling every 5 seconds...");
+    
+    const interval = setInterval(() => {
+      console.log("⏰ Polling database for updates...");
+      loadHistory();
+    }, 5000); // 5 detik
+
+    return () => {
+      console.log("🛑 Stopping polling");
+      clearInterval(interval);
+    };
+  }, [loadHistory]);
+
+  // ========================================
+  // COUNTDOWN TIMER
+  // ========================================
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setRiwayat(prev => 
+        prev.map(r => ({
+          ...r,
+          remaining: Math.max(0, r.expiredAt - Date.now())
+        }))
+      );
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const getStatusBadge = (status, remaining) => {
     if (status === "Kadaluarsa" || remaining <= 0) {
@@ -122,7 +110,7 @@ export default function History() {
           <span>Kadaluarsa</span>
         </div>
       );
-    } else if (status === "Lunas" || status === "Dibayar") {
+    } else if (status === "Sudah Dibayar" || status === "Lunas" || status === "Dibayar") {
       return (
         <div className="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-lg text-sm font-semibold">
           <CheckCircle size={16} />
@@ -161,14 +149,24 @@ export default function History() {
               <span>Kembali</span>
             </button>
             
-            <div className="flex items-center gap-3">
-              <div className="bg-white/20 p-3 rounded-2xl">
-                <Clock size={28} className="text-white" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-3 rounded-2xl">
+                  <Clock size={28} className="text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-white">Riwayat Pemesanan</h1>
+                  <p className="text-white/90 text-sm">Lihat semua transaksi Anda</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-white">Riwayat Pemesanan</h1>
-                <p className="text-white/90 text-sm">Lihat semua transaksi Anda</p>
-              </div>
+
+              {/* Sync Status */}
+              {lastSync && (
+                <div className="text-white/80 text-xs flex items-center gap-2">
+                  <RefreshCw size={12} className="animate-spin" />
+                  <span>Sync: {lastSync}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -180,7 +178,7 @@ export default function History() {
             </div>
             <div className="text-center p-3 bg-linear-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100">
               <p className="text-2xl font-bold text-green-600">
-                {riwayat.filter(r => r.status === "Lunas" || r.status === "Dibayar").length}
+                {riwayat.filter(r => r.status === "Lunas" || r.status === "Dibayar" || r.status === "Sudah Dibayar").length}
               </p>
               <p className="text-xs text-gray-600">Berhasil</p>
             </div>
@@ -191,6 +189,17 @@ export default function History() {
               <p className="text-xs text-gray-600">Kadaluarsa</p>
             </div>
           </div>
+        </div>
+
+        {/* Manual Refresh Button */}
+        <div className="mb-4 flex justify-end">
+          <button
+            onClick={loadHistory}
+            className="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-xl shadow-md transition-all border border-gray-200"
+          >
+            <RefreshCw size={16} />
+            <span className="text-sm">Refresh</span>
+          </button>
         </div>
 
         {/* Content */}
@@ -282,7 +291,7 @@ export default function History() {
                   </div>
 
                   {/* Countdown / Status */}
-                  {item.status !== "Lunas" && item.status !== "Dibayar" && item.remaining > 0 && (
+                  {item.status !== "Lunas" && item.status !== "Dibayar" && item.status !== "Sudah Dibayar" && item.remaining > 0 && (
                     <div className="bg-linear-to-r from-orange-500 to-red-500 p-3 rounded-xl text-center">
                       <div className="flex items-center justify-center gap-2 text-white">
                         <Clock size={16} className="animate-pulse" />
